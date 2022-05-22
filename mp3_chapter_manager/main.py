@@ -1,6 +1,7 @@
 import sys
 from typing import List, Optional
 import click
+import eyed3
 from eyed3.id3 import Tag
 from eyed3.id3.frames import ChapterFrame, StartEndTuple, TITLE_FID
 
@@ -57,6 +58,20 @@ def add(input: click.Path, chapter_id: str, start: int, end: int, force: bool):
     if chapter_id == "":
         click.echo("Chapter ID must not be empty.")
         return
+
+    audiofile = eyed3.load(input)
+    if audiofile is not None and audiofile.info is not None:
+        duration_ms = int(audiofile.info.time_secs * 1000)
+
+        if end is None:
+            end = duration_ms
+        elif end > duration_ms:
+            click.echo(
+                f"Maximum value: {duration_ms} exceeded for 'end' argument exceeded."
+            )
+            return
+    else:
+        click.echo("Unable to check against file duration boundary.")
 
     if start >= end:
         click.echo("'start' argument must be less than 'end' argument.")
